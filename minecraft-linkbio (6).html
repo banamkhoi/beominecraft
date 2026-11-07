@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- SEO cơ bản -->
+  <title>CYBR Player • Minecraft Link Bio</title>
+  <meta name="description" content="Trang liên kết cá nhân phong cách Minecraft – Overworld, Nether, The End.">
+  <meta name="keywords" content="minecraft, link bio, gamer, profile">
+  <meta name="author" content="CYBR Player">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CYBR Player • Minecraft Link Bio">
+  <meta property="og:description" content="Trang liên kết cá nhân phong cách Minecraft.">
+  <meta property="og:image" content="https://example.com/og-image.png">
+  <meta property="og:url" content="https://example.com/">
+  <!-- Favicon dạng khối grass (SVG inline) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='6' fill='%235b9b3a'/%3E%3Crect y='6' width='16' height='10' fill='%238b5a2b'/%3E%3C/svg%3E">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+/* ==========================================================
+   MINECRAFT LINK BIO – STYLE
+   Glass UI + Pixel UI + Blocky + Nether/End effects
+   ========================================================== */
+
+/* ---------- 0. Font Minecraft tùy chỉnh (minecraft.ttf) ---------- */
+@font-face {
+  font-family: 'MinecraftCustom';
+  src: url('https://raw.githubusercontent.com/banamkhoi/beominecraft/main/minecraft.ttf') format('truetype');
+  font-display: swap;
+}
+
+/* ---------- 1. Biến màu (chỉnh tại đây) ---------- */
+:root {
+  --grass: #5b9b3a;
+  --dirt: #8b5a2b;
+  --stone: #7d7d7d;
+  --obsidian: #0b0714;
+  --ender: #a64dff;
+  --diamond: #3ee6e6;
+  --nether: #ff6a1a;
+  --glass-bg: rgba(20, 20, 24, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --text: #f4f4f4;
+  --muted: #b9b9c4;
+  --accent: var(--grass);
+  --glow: var(--accent);
+  --radius: 10px; /* bo góc vừa phải, kiểu block */
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+
+/* Chủ đề theo Dimension */
+body.dim-overworld { --accent: #5b9b3a; --glow: #7ddc4b; }
+body.dim-nether    { --accent: #ff6a1a; --glow: #ffb347; }
+body.dim-end       { --accent: #a64dff; --glow: #3ee6e6; }
+
+/* ---------- 2. Reset & nền ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'MinecraftCustom', 'VT323', monospace;
+  font-size: 20px;
+  color: var(--text);
+  background: #05050a;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+
+/* Scrollbar kiểu Minecraft */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#8b8b8b, #5a5a5a);
+  border: 2px solid #111;
+}
+
+/* Nền toàn màn hình + parallax */
+.bg-layer {
+  position: fixed;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  background-color: #1d2a14;
+  transition: background-image .6s ease, opacity .6s ease;
+  will-change: transform;
+  z-index: -3;
+}
+/* Nếu chưa có ảnh, dùng gradient theo dimension */
+body.dim-overworld .bg-layer { background-image: linear-gradient(180deg, #3f7fc4 0%, #9bd3ff 55%, #5b9b3a 56%, #2e5a1d 100%); }
+body.dim-nether .bg-layer    { background-image: linear-gradient(180deg, #2a0a05 0%, #6b1d08 50%, #ff6a1a 100%); }
+body.dim-end .bg-layer       { background-image: radial-gradient(circle at 50% 30%, #3a1656 0%, #0b0714 60%, #000 100%); }
+
+/* Video nền (đặt URL ở CONFIG.backgroundVideo) */
+.bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -3;
+  pointer-events: none;
+}
+.bg-video[hidden] { display: none; }
+
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  z-index: -2;
+  pointer-events: none;
+}
+#particles {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+.portal-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 110%, var(--glow), transparent 60%);
+  opacity: .18;
+  animation: portalPulse 6s ease-in-out infinite;
+}
+@keyframes portalPulse {
+  0%, 100% { opacity: .12; }
+  50%      { opacity: .28; }
+}
+
+/* Cursor glow */
+.cursor-glow {
+  position: fixed;
+  width: 260px;
+  height: 260px;
+  left: 0;
+  top: 0;
+  margin: -130px 0 0 -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow) 0%, transparent 65%);
+  opacity: .14;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+
+/* ---------- 3. Loading screen ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: opacity .6s ease, visibility .6s;
+}
+.loader.hide { opacity: 0; visibility: hidden; }
+.loader-box { width: min(420px, 85vw); text-align: center; }
+.loader-title {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 22px;
+  text-shadow: 3px 3px #000;
+}
+.loader-bar {
+  height: 22px;
+  background: #222;
+  border: 3px solid #000;
+  box-shadow: inset 0 0 0 2px #444;
+  padding: 3px;
+}
+.loader-fill {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #5b9b3a 0 14px, #4a8030 14px 16px);
+  transition: width .15s linear;
+}
+.loader-pct {
+  margin-top: 10px;
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #aaa;
+}
+
+/* ---------- 3b. Màn hình Click to enter ---------- */
+.enter {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+  transition: opacity .6s ease, visibility .6s;
+}
+.enter.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+.enter-box { text-align: center; }
+.enter-title {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 20px;
+  color: #fff;
+  text-shadow: 3px 3px #000;
+  margin-bottom: 18px;
+}
+.enter-text {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: var(--glow);
+  text-shadow: 2px 2px #000, 0 0 12px var(--glow);
+  padding: 12px 18px;
+  border: 3px solid #000;
+  border-radius: 6px;
+  background: linear-gradient(#8b8b8b, #5a5a5a);
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,.35), 0 4px 0 #000;
+  animation: enterBlink 1.4s steps(2) infinite;
+}
+.enter:hover .enter-text { filter: brightness(1.2); }
+@keyframes enterBlink { 50% { opacity: .55; } }
+
+/* ---------- 4. Layout ---------- */
+.page {
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Glass */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+  position: relative;
+  overflow: hidden;
+}
+/* Glass reflection */
+.glass::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,.12), transparent);
+  transform: skewX(-20deg);
+  animation: reflect 7s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes reflect {
+  0%, 60% { left: -60%; }
+  100%    { left: 130%; }
+}
+
+/* Fade-in khi load */
+.fade-up {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: fadeUp .7s var(--ease) forwards;
+}
+.delay-1 { animation-delay: .1s; }
+.delay-2 { animation-delay: .2s; }
+.delay-3 { animation-delay: .3s; }
+.delay-4 { animation-delay: .4s; }
+@keyframes fadeUp {
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 5. Header ---------- */
+.header {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.header-date { display: flex; flex-direction: column; gap: 2px; }
+#weekday {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--glow);
+  text-shadow: 2px 2px #000;
+}
+#fullDate { font-size: 18px; color: var(--muted); }
+.header-clock {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 15px;
+  color: #fff;
+  text-shadow: 0 0 10px var(--glow), 2px 2px #000;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 6. Card chung ---------- */
+.card { padding: 22px 20px; }
+
+/* ---------- 7. Profile ---------- */
+.profile { text-align: center; }
+.avatar-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 14px;
+}
+.avatar {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 4px solid #000;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--grass), var(--dirt));
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 0 3px var(--glow), 0 0 22px var(--glow);
+  transition: transform .3s var(--ease), box-shadow .3s;
+}
+.avatar:hover { transform: scale(1.08); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.avatar .ripple-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  transform: scale(0);
+  animation: ripple .6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+.status-dot {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  background: #3fe04a;
+  border: 3px solid #000;
+  border-radius: 2px;
+  box-shadow: 0 0 10px #3fe04a;
+  animation: blink 1.6s steps(2) infinite;
+}
+.status-dot.away { background: #ffb347; box-shadow: 0 0 10px #ffb347; }
+.status-dot.sleep { background: #777; box-shadow: none; animation: none; }
+@keyframes blink { 50% { opacity: .35; } }
+
+.username {
+  margin: 0;
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 20px;
+  font-weight: 400;
+  text-shadow: 3px 3px #000;
+}
+.handle { margin: 6px 0 2px; color: var(--glow); font-size: 20px; }
+.mc-name { margin: 4px 0; color: var(--text); font-size: 20px; }
+.mc-name i { color: var(--diamond); }
+.location { margin: 4px 0; color: var(--muted); }
+.bio { margin: 12px auto 0; max-width: 360px; color: #ddd; line-height: 1.2; }
+
+.status-line {
+  margin: 14px auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(0,0,0,.45);
+  border: 2px solid var(--glass-border);
+  border-radius: 6px;
+  font-size: 18px;
+}
+.sleep-icon { animation: floaty 2.4s ease-in-out infinite; }
+
+.stats {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat {
+  background: rgba(0,0,0,.4);
+  border: 2px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-num {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: var(--diamond);
+  font-variant-numeric: tabular-nums;
+}
+.stat-label { font-size: 17px; color: var(--muted); }
+
+/* ---------- 8. Music player (Music Disc) ---------- */
+.player {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.disc-wrap { flex: 0 0 120px; }
+.disc {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #111;
+  border: 4px solid #000;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px #333, 0 0 18px rgba(0,0,0,.6);
+  animation: spin 9s linear infinite;
+  animation-play-state: paused;
+}
+.disc.playing { animation-play-state: running; }
+.disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  opacity: .9;
+}
+.disc-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  background: #0b0b0b;
+  border-radius: 50%;
+  border: 2px solid #444;
+  z-index: 2;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.player-info { flex: 1 1 220px; min-width: 0; text-align: left; }
+.track-title {
+  font-family: 'MinecraftCustom', 'Press Start 2P', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track-artist { color: var(--muted); font-size: 17px; margin-top: 4px; }
+
+.progress {
+  margin-top: 12px;
+  height: 12px;
+  background: #1a1a1a;
+  border: 2px solid #000;
+  box-shadow: inset 0 0 0 1px #333;
+  cursor: pointer;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, var(--glow) 0 8px, rgba(0,0,0,.25) 8px 10px);
+  transition: width .2s linear;
+}
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 16px;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.ctrl {
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(#8b8b8b, #5a5a5a);
+  border: 3px solid #000;
+  border-radius: 6px;
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,.35), 0 4px 0 #000;
+  display: grid;
+  place-items: center;
+  transition: transform .12s, filter .2s;
+}
+.ctrl:hover { filter: brightness(1.2); transform: translateY(-2px); }
+.ctrl:active { transform: translateY(3px); box-shadow: inset 0 -2px 0 rgba(0,0,0,.35), 0 1px 0 #000; }
+.ctrl.play { background: linear-gradient(var(--glow), var(--accent)); }
+
+.extra-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.auto-play { display: flex; align-items: center; gap: 6px; font-size: 17px; color: var(--muted); cursor: pointer; }
+.auto-play input { accent-color: var(--glow); }
+.volume { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.volume input { width: 100px; accent-color: var(--glow); }
+
+/* ---------- 9. Social blocks ---------- */
+.socials {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.block-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.35)), var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 2px solid #000;
+  border-radius: var(--radius);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 0 6px 0 #000, 0 10px 20px rgba(0,0,0,.5);
+  font-size: 22px;
+  overflow: hidden;
+  transition: transform .25s var(--ease), box-shadow .25s, border-color .25s;
+  animation: floaty 4s ease-in-out infinite;
+}
+.block-btn:nth-child(2) { animation-delay: -1s; }
+.block-btn:nth-child(3) { animation-delay: -2s; }
+.block-btn:nth-child(4) { animation-delay: -3s; }
+.block-btn i { font-size: 24px; }
+.block-btn:hover {
+  transform: translateY(-4px);
+  border-color: var(--glow);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.15), 0 6px 0 #000, 0 0 22px var(--glow);
+}
+.block-btn:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,.1), 0 2px 0 #000; }
+.block-btn .ripple-dot { background: rgba(255,255,255,.5); }
+.block-btn.is-empty { opacity: .55; }
+
+@keyframes floaty {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -5px; }
+}
+
+/* Nút Donate (ZyPage) */
+.donate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.35)), var(--glass-bg);
+  border: 2px solid #000;
+  border-radius: var(--radius);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 0 6px 0 #000, 0 10px 20px rgba(0,0,0,.5);
+  font-size: 22px;
+  transition: transform .25s var(--ease), box-shadow .25s, border-color .25s;
+}
+.donate-btn img {
+  height: 36px;
+  width: auto;
+  border-radius: 6px;
+}
+.donate-btn:hover {
+  transform: translateY(-4px);
+  border-color: var(--glow);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.15), 0 6px 0 #000, 0 0 22px var(--glow);
+}
+.donate-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+.donate-btn.is-empty { opacity: .55; pointer-events: none; }
+
+/* ---------- 10. Dimension switch ---------- */
+.dimensions {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.dim-btn {
+  flex: 1 1 0;
+  min-width: 100px;
+  padding: 10px 6px;
+  background: rgba(0,0,0,.4);
+  border: 2px solid var(--glass-border);
+  border-radius: 8px;
+  font-size: 18px;
+  transition: all .25s var(--ease);
+}
+.dim-btn i { margin-right: 4px; }
+.dim-btn:hover { border-color: var(--glow); }
+.dim-btn.active {
+  background: linear-gradient(var(--glow), var(--accent));
+  color: #000;
+  border-color: #000;
+  box-shadow: 0 0 16px var(--glow);
+}
+
+.footer { text-align: center; color: var(--muted); font-size: 16px; margin-top: 4px; }
+
+/* Ripple chung */
+.ripple-dot {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.5);
+  transform: scale(0);
+  animation: ripple .6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Hiệu ứng Nether portal khi đổi dimension */
+body.flash::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, var(--glow), transparent 70%);
+  opacity: 0;
+  animation: flashOut .8s ease-out forwards;
+  z-index: 50;
+  pointer-events: none;
+}
+@keyframes flashOut { 0% { opacity: .6; } 100% { opacity: 0; } }
+
+/* ---------- 11. Responsive ---------- */
+@media (max-width: 480px) {
+  body { font-size: 18px; }
+  .username { font-size: 16px; }
+  .header-clock { font-size: 12px; }
+  .disc-wrap { flex-basis: 100px; }
+  .disc { width: 100px; height: 100px; }
+  .block-btn { font-size: 19px; padding: 14px 8px; }
+  .dim-btn { font-size: 16px; min-width: 0; }
+}
+@media (min-width: 900px) {
+  .page { max-width: 520px; }
+}
+
+/* ---------- 12. Giảm chuyển động nếu người dùng yêu cầu ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+  </style>
+</head>
+<body class="dim-overworld">
+
+  <!-- Loading screen kiểu Minecraft -->
+  <div id="loader" class="loader" aria-live="polite">
+    <div class="loader-box">
+      <div class="loader-title">Loading World...</div>
+      <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+      <div class="loader-pct" id="loaderPct">0%</div>
+    </div>
+  </div>
+
+  <!-- Màn hình "Click to enter": cần một cú click để trình duyệt cho phép phát nhạc -->
+  <div id="enter" class="enter" role="button" tabindex="0" aria-label="Click to enter">
+    <div class="enter-box">
+      <div class="enter-title">CYBR Player</div>
+      <div class="enter-text">Click to enter</div>
+    </div>
+  </div>
+
+  <!-- Nền: ảnh + overlay + parallax -->
+  <div class="bg-layer" id="bgLayer" aria-hidden="true"></div>
+  <video id="bgVideo" class="bg-video" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+  <div class="bg-overlay" aria-hidden="true"></div>
+  <canvas id="particles" aria-hidden="true"></canvas>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+  <div class="portal-glow" aria-hidden="true"></div>
+
+  <main class="page">
+    <!-- Header -->
+    <header class="glass header fade-up">
+      <div class="header-date">
+        <span id="weekday">---</span>
+        <span id="fullDate">---</span>
+      </div>
+      <div class="header-clock" id="liveClock">00:00:00</div>
+    </header>
+
+    <!-- Profile card -->
+    <section class="glass card profile fade-up delay-1">
+      <div class="avatar-wrap">
+        <button class="avatar" id="avatar" type="button" aria-label="Avatar">
+          <img id="avatarImg" alt="Avatar" loading="lazy">
+        </button>
+        <span class="status-dot" id="statusDot" title="Trạng thái"></span>
+      </div>
+
+      <h1 class="username" id="displayName">Steve</h1>
+      <p class="handle" id="handle">@username</p>
+      <p class="mc-name"><i class="fa-solid fa-cube"></i> <span id="mcName">Steve</span></p>
+      <p class="location"><i class="fa-solid fa-location-dot"></i> <span id="location">Hà Nội, Việt Nam 🇻🇳</span></p>
+      <p class="bio" id="bio">Builder • Explorer • Redstone enjoyer</p>
+
+      <div class="status-line">
+        <span id="statusText">Đang online</span>
+        <span id="sleepIcon" class="sleep-icon" hidden>💤</span>
+      </div>
+
+    </section>
+
+    <!-- Music player (đĩa nhạc) -->
+    <section class="glass card player fade-up delay-2" id="player">
+      <div class="disc-wrap">
+        <div class="disc" id="disc">
+          <span class="disc-hole"></span>
+        </div>
+      </div>
+      <div class="player-info">
+        <div class="track-title" id="trackTitle">Track</div>
+        <div class="track-artist" id="trackArtist">Artist</div>
+
+        <div class="progress" id="progress" role="slider" aria-label="Thanh tiến trình" tabindex="0">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="time-row">
+          <span id="curTime">0:00</span>
+          <span id="durTime">0:00</span>
+        </div>
+
+        <div class="controls">
+          <button class="ctrl" id="prevBtn" type="button" aria-label="Bài trước"><i class="fa-solid fa-backward-step"></i></button>
+          <button class="ctrl play" id="playBtn" type="button" aria-label="Phát / Dừng"><i class="fa-solid fa-play"></i></button>
+          <button class="ctrl" id="nextBtn" type="button" aria-label="Bài tiếp"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+
+        <div class="extra-row">
+          <div class="volume">
+            <i class="fa-solid fa-volume-high"></i>
+            <input type="range" id="volume" min="0" max="1" step="0.01" value="0.6" aria-label="Âm lượng">
+          </div>
+        </div>
+      </div>
+      <audio id="audio" preload="none"></audio>
+    </section>
+
+    <!-- Social links -->
+    <nav class="socials fade-up delay-3" aria-label="Mạng xã hội">
+      <a class="block-btn" data-key="discord" href="#" target="_blank" rel="noopener">
+        <i class="fa-brands fa-discord"></i><span>Discord</span>
+      </a>
+      <a class="block-btn" data-key="tiktok" href="#" target="_blank" rel="noopener">
+        <i class="fa-brands fa-tiktok"></i><span>TikTok</span>
+      </a>
+      <a class="block-btn" data-key="youtube" href="#" target="_blank" rel="noopener">
+        <i class="fa-brands fa-youtube"></i><span>YouTube</span>
+      </a>
+      <a class="block-btn" data-key="instagram" href="#" target="_blank" rel="noopener">
+        <i class="fa-brands fa-instagram"></i><span>Instagram</span>
+      </a>
+    </nav>
+
+    <!-- Donate qua ZyPage -->
+    <a class="donate-btn fade-up delay-3" id="donateBtn" href="#" target="_blank" rel="noopener" aria-label="Donate qua ZyPage">
+      <img src="https://i.ibb.co/J4hsGhN/zypage.webp" alt="ZyPage" loading="lazy">
+      <span>Donate</span>
+    </a>
+
+    <!-- Chuyển Dimension -->
+    <div class="dimensions glass fade-up delay-4" role="group" aria-label="Chọn chiều không gian">
+      <button class="dim-btn active" data-dim="overworld" type="button"><i class="fa-solid fa-tree"></i> Overworld</button>
+      <button class="dim-btn" data-dim="nether" type="button"><i class="fa-solid fa-fire"></i> Nether</button>
+      <button class="dim-btn" data-dim="end" type="button"><i class="fa-solid fa-moon"></i> The End</button>
+    </div>
+
+    <footer class="footer">Powered by ....</footer>
+  </main>
+
+  <script>
+/* ==========================================================
+   MINECRAFT LINK BIO – SCRIPT
+   Vanilla JS (ES6). Chỉnh cấu hình ở CONFIG bên dưới.
+   ========================================================== */
+
+/* ---------- 1. CẤU HÌNH (sửa tại đây) ---------- */
+const CONFIG = {
+  username: 'CYBR Player',
+  handle: '@cybrplayer',
+  minecraftName: 'Steve',
+  location: 'Hà Nội, Việt Nam 🇻🇳',
+  bio: 'Builder • Explorer • Redstone enjoyer',
+  avatar: '',            // URL ảnh avatar; để trống sẽ dùng skin Minecraft bên dưới
+  minecraftSkin: 'https://mc-heads.net/avatar/Steve/256', // ảnh đầu skin Minecraft
+  background: {          // ảnh nền cho từng dimension; để '' sẽ dùng gradient trong CSS
+    overworld: '',
+    nether: '',
+    end: ''
+  },
+  status: 'online',      // 'online' | 'away' | 'sleep'
+  socials: {
+    discord: 'https://discord.com/',
+    tiktok: 'https://www.tiktok.com/',
+    youtube: 'https://www.youtube.com/',
+    instagram: 'https://www.instagram.com/'
+  },
+  backgroundVideo: 'https://raw.githubusercontent.com/banamkhoi/beominecraft/main/e69b5005-8dc1-4e89-b2de-2e21c342e549.mp4', // video nền; để '' để dùng ảnh/gradient
+  donate: '',            // link trang donate ZyPage của bạn, ví dụ 'https://...'
+  // Playlist: thêm bài bằng cách copy một dòng { title, artist, src }
+  // src là link mp3 (hoặc tên file cùng thư mục, ví dụ 'music.mp3')
+  playlist: [
+    {
+      title: 'Phép Màu Nào Cũng Có',
+      artist: 'MAYDAYs ft. Minh Tốc',
+      src: 'https://raw.githubusercontent.com/banamkhoi/linh-ting/main/Y2Mate.is%20-%20Php%20Mu%20n%20C%20G%20OST%20-%20MAYDAYs%20ft%20Minh%20Tc%20_%20Official%20Lyric%20Video.mp3'
+    },
+    {
+      title: 'Phép Màu (Remix Hoodtrap x Drill)',
+      artist: 'Minh Tốc x MAYDAYs · Prod. Uti',
+      src: 'https://raw.githubusercontent.com/banamkhoi/linh-ting/main/Ph%C3%A9p%20M%C3%A0u%20remix%20Hoodtrap%20x%20Drill%20Minh%20T%E1%BB%91c%20MayDays%20Prod.Uti.mp3'
+    }
+  ],
+  defaultDimension: 'overworld',
+  particles: {
+    count: 60,           // số hạt (giảm nếu máy yếu)
+    color: '#7ddc4b'
+  }
+};
+
+/* ---------- 2. TIỆN ÍCH ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Định dạng giây thành m:ss */
+function fmtTime(sec) {
+  if (!isFinite(sec) || sec < 0) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+/** Tạo hiệu ứng ripple ở vị trí click */
+function addRipple(el, x, y) {
+  const r = document.createElement('span');
+  r.className = 'ripple-dot';
+  const rect = el.getBoundingClientRect();
+  r.style.left = `${x - rect.left}px`;
+  r.style.top = `${y - rect.top}px`;
+  el.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+}
+
+/* ---------- 3. ÁP DỤNG CẤU HÌNH LÊN GIAO DIỆN ---------- */
+function applyConfig() {
+  $('#displayName').textContent = CONFIG.username;
+  $('#handle').textContent = CONFIG.handle;
+  $('#mcName').textContent = CONFIG.minecraftName;
+  $('#location').textContent = CONFIG.location;
+  $('#bio').textContent = CONFIG.bio;
+
+  const avatarSrc = CONFIG.avatar || CONFIG.minecraftSkin;
+  const avatarImg = $('#avatarImg');
+  avatarImg.src = avatarSrc;
+  avatarImg.loading = 'lazy';
+  avatarImg.onerror = () => { avatarImg.removeAttribute('src'); };
+
+  // Trạng thái
+  const dot = $('#statusDot');
+  const text = $('#statusText');
+  const sleepIcon = $('#sleepIcon');
+  dot.classList.remove('away', 'sleep');
+  sleepIcon.hidden = true;
+  if (CONFIG.status === 'away') {
+    dot.classList.add('away');
+    text.textContent = 'Đang bận';
+  } else if (CONFIG.status === 'sleep') {
+    dot.classList.add('sleep');
+    text.textContent = 'Đang ngủ';
+    sleepIcon.hidden = false;
+  } else {
+    text.textContent = 'Đang online';
+  }
+
+  // Social links
+  $$('.block-btn').forEach(a => {
+    const key = a.dataset.key;
+    const url = CONFIG.socials[key];
+    if (url) {
+      a.href = url;
+    } else {
+      a.classList.add('is-empty');
+      a.removeAttribute('target');
+    }
+  });
+
+  // Video nền
+  const bgVideo = $('#bgVideo');
+  if (CONFIG.backgroundVideo) {
+    bgVideo.src = CONFIG.backgroundVideo;
+    if (prefersReducedMotion) bgVideo.removeAttribute('autoplay');
+    bgVideo.play().catch(() => {}); // trình duyệt có thể chặn autoplay; video sẽ tự chạy khi có tương tác
+  } else {
+    bgVideo.hidden = true;
+  }
+
+  // Donate
+  const donateBtn = $('#donateBtn');
+  if (CONFIG.donate) {
+    donateBtn.href = CONFIG.donate;
+  } else {
+    donateBtn.classList.add('is-empty');
+    donateBtn.removeAttribute('target');
+  }
+
+  // Màu particle
+  particleColor = CONFIG.particles.color;
+}
+
+/* ---------- 4. LOADING SCREEN ---------- */
+function runLoader() {
+  return new Promise(resolve => {
+    const fill = $('#loaderFill');
+    const pct = $('#loaderPct');
+    const loader = $('#loader');
+    let p = 0;
+    const step = () => {
+      p = Math.min(100, p + (prefersReducedMotion ? 100 : Math.random() * 12 + 4));
+      fill.style.width = `${p}%`;
+      pct.textContent = `${Math.floor(p)}%`;
+      if (p < 100) {
+        setTimeout(step, 90);
+      } else {
+        setTimeout(() => {
+          loader.classList.add('hide');
+          resolve();
+        }, 250);
+      }
+    };
+    step();
+  });
+}
+
+/* ---------- 5. ĐỒNG HỒ THỜI GIAN THỰC ---------- */
+const WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+function startClock() {
+  const update = () => {
+    const now = new Date();
+    $('#weekday').textContent = WEEKDAYS[now.getDay()];
+    $('#fullDate').textContent =
+      `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    $('#liveClock').textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+  };
+  update();
+  setInterval(update, 1000);
+}
+
+/* ---------- 7. PARTICLE NỀN (canvas, requestAnimationFrame) ---------- */
+let particleColor = '#7ddc4b';
+
+function initParticles() {
+  if (prefersReducedMotion) return;
+  const canvas = $('#particles');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    particles = Array.from({ length: CONFIG.particles.count }, () => spawn(true));
+  };
+
+  const spawn = (randomY = false) => ({
+    x: Math.random() * w,
+    y: randomY ? Math.random() * h : h + 10,
+    size: Math.random() * 2.5 + 1,       // kích thước pixel
+    speed: Math.random() * 0.6 + 0.2,
+    drift: (Math.random() - 0.5) * 0.4,
+    alpha: Math.random() * 0.6 + 0.2
+  });
+
+  let last = 0;
+  const draw = (ts) => {
+    // Giới hạn ~60fps
+    if (ts - last < 16) { requestAnimationFrame(draw); return; }
+    last = ts;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = particleColor;
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.y -= p.speed;
+      p.x += p.drift;
+      if (p.y < -10) particles[i] = spawn(false);
+      ctx.globalAlpha = p.alpha;
+      // Vẽ hạt vuông để giống pixel Minecraft
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  };
+
+  resize();
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(draw);
+}
+
+/* ---------- 8. CURSOR GLOW + PARALLAX (1 vòng rAF, mượt) ---------- */
+function initCursorAndParallax() {
+  if (prefersReducedMotion) return;
+  const glow = $('#cursorGlow');
+  const bg = $('#bgLayer');
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  let gx = mx, gy = my;
+  let px = 0, py = 0;
+  let tx = 0, ty = 0;
+
+  window.addEventListener('pointermove', e => {
+    mx = e.clientX;
+    my = e.clientY;
+    // Parallax: nền dịch nhẹ ngược chuột
+    tx = (e.clientX / window.innerWidth - 0.5) * -24;
+    ty = (e.clientY / window.innerHeight - 0.5) * -24;
+  }, { passive: true });
+
+  const loop = () => {
+    // Làm mượt chuyển động glow và parallax (lerp)
+    gx += (mx - gx) * 0.15;
+    gy += (my - gy) * 0.15;
+    glow.style.transform = `translate3d(${gx}px, ${gy}px, 0)`;
+
+    px += (tx - px) * 0.08;
+    py += (ty - py) * 0.08;
+    bg.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 9. MUSIC PLAYER ---------- */
+function initPlayer() {
+  const audio = $('#audio');
+  const disc = $('#disc');
+  const playBtn = $('#playBtn');
+  const playIcon = playBtn.querySelector('i');
+  const progress = $('#progress');
+  const fill = $('#progressFill');
+  const volume = $('#volume');
+
+  audio.volume = parseFloat(volume.value);
+
+  const setPlayingUI = playing => {
+    disc.classList.toggle('playing', playing);
+    playIcon.className = playing ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+    playBtn.setAttribute('aria-label', playing ? 'Tạm dừng' : 'Phát');
+  };
+
+  const togglePlay = async () => {
+    try {
+      if (audio.paused) {
+        await audio.play();
+      } else {
+        audio.pause();
+      }
+    } catch (err) {
+      console.warn('Không phát được nhạc:', err);
+    }
+  };
+
+  playBtn.addEventListener('click', e => {
+    addRipple(playBtn, e.clientX, e.clientY);
+    togglePlay();
+  });
+  audio.addEventListener('play', () => setPlayingUI(true));
+  audio.addEventListener('pause', () => setPlayingUI(false));
+
+  // Thời lượng & tiến trình
+  audio.addEventListener('loadedmetadata', () => {
+    $('#durTime').textContent = fmtTime(audio.duration);
+  });
+  audio.addEventListener('timeupdate', () => {
+    const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+    fill.style.width = `${pct}%`;
+    $('#curTime').textContent = fmtTime(audio.currentTime);
+  });
+
+  // Bấm thanh progress để tua
+  const seek = e => {
+    if (!audio.duration) return;
+    const rect = progress.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+  };
+  progress.addEventListener('click', seek);
+  progress.addEventListener('keydown', e => {
+    if (!audio.duration) return;
+    if (e.key === 'ArrowRight') audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+    if (e.key === 'ArrowLeft') audio.currentTime = Math.max(0, audio.currentTime - 5);
+  });
+
+  // Âm lượng
+  volume.addEventListener('input', () => {
+    audio.volume = parseFloat(volume.value);
+  });
+
+  // Playlist: nạp bài theo chỉ số; nếu đang phát thì phát tiếp bài mới
+  const playlist = CONFIG.playlist;
+  let trackIndex = 0;
+  const loadTrack = (index, keepPlaying = false) => {
+    trackIndex = (index + playlist.length) % playlist.length; // vòng lại đầu/cuối
+    const track = playlist[trackIndex];
+    $('#trackTitle').textContent = track.title;
+    $('#trackArtist').textContent = track.artist;
+    audio.src = track.src;
+    audio.currentTime = 0;
+    if (keepPlaying) {
+      audio.play().catch(err => console.warn('Không phát được nhạc:', err));
+    }
+  };
+  loadTrack(0);
+
+  $('#prevBtn').addEventListener('click', e => {
+    addRipple(e.currentTarget, e.clientX, e.clientY);
+    loadTrack(trackIndex - 1, !audio.paused);
+  });
+  $('#nextBtn').addEventListener('click', e => {
+    addRipple(e.currentTarget, e.clientX, e.clientY);
+    loadTrack(trackIndex + 1, !audio.paused);
+  });
+
+  // Hết bài thì dừng (không tự phát lại)
+  audio.addEventListener('ended', () => setPlayingUI(false));
+}
+
+/* ---------- 10. SOCIAL LINKS: ripple + đếm click ---------- */
+function initSocials() {
+  $$('.block-btn').forEach(a => {
+    a.addEventListener('click', e => {
+      if (a.classList.contains('is-empty')) {
+        e.preventDefault();
+        return;
+      }
+      addRipple(a, e.clientX, e.clientY);
+    });
+  });
+}
+
+/* ---------- 11. AVATAR: ripple ---------- */
+function initAvatar() {
+  const btn = $('#avatar');
+  btn.addEventListener('click', e => addRipple(btn, e.clientX, e.clientY));
+}
+
+/* ---------- 12. DIMENSION (Overworld / Nether / End) ---------- */
+function setDimension(dim) {
+  const body = document.body;
+  const bgLayer = $('#bgLayer');
+  const url = CONFIG.background[dim];
+
+  body.classList.remove('dim-overworld', 'dim-nether', 'dim-end');
+  body.classList.add(`dim-${dim}`);
+  bgLayer.style.backgroundImage = url ? `url("${url}")` : '';
+
+  // Hiệu ứng flash kiểu Nether portal
+  body.classList.remove('flash');
+  void body.offsetWidth; // reset animation
+  body.classList.add('flash');
+  setTimeout(() => body.classList.remove('flash'), 900);
+
+  $$('.dim-btn').forEach(b => {
+    const active = b.dataset.dim === dim;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
+
+  localStorage.setItem('mc-linkbio-dim', dim);
+}
+
+function initDimensions() {
+  $$('.dim-btn').forEach(btn => {
+    btn.addEventListener('click', () => setDimension(btn.dataset.dim));
+  });
+  const saved = localStorage.getItem('mc-linkbio-dim') || CONFIG.defaultDimension;
+  setDimension(saved);
+}
+
+/* ---------- 12b. CLICK TO ENTER: click để bật nhạc + video nền ---------- */
+// Trình duyệt chỉ cho phát tiếng sau một thao tác của người dùng (click/chạm/phím).
+// Nên nhạc chỉ bắt đầu khi khách bấm vào màn hình này.
+function initEnterGate() {
+  const gate = $('#enter');
+  let entered = false;
+
+  const enter = () => {
+    if (entered) return;
+    entered = true;
+    gate.classList.add('hide');
+
+    const bgVideo = $('#bgVideo');
+    if (!bgVideo.hidden) bgVideo.play().catch(() => {});
+
+    // Phát nhạc ngay trong lúc xử lý click, để trình duyệt không chặn
+    $('#audio').play().catch(err => console.warn('Không phát được nhạc:', err));
+  };
+
+  // Lắng nghe trên toàn trang: bấm vào đâu cũng được (kể cả khi loading screen còn che)
+  const onClick = () => enter();
+  const onKey = e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      enter();
+    }
+  };
+  document.addEventListener('click', onClick);
+  document.addEventListener('keydown', onKey);
+
+  // Gỡ listener sau khi đã vào, để không tốn tài nguyên
+  const cleanup = () => {
+    document.removeEventListener('click', onClick);
+    document.removeEventListener('keydown', onKey);
+  };
+  gate.addEventListener('transitionend', e => {
+    if (entered && e.propertyName === 'opacity') cleanup();
+  });
+}
+
+/* ---------- 13. KHỞI ĐỘNG ---------- */
+document.addEventListener('DOMContentLoaded', async () => {
+  applyConfig();
+  initAvatar();
+  initSocials();
+  initPlayer();
+  initDimensions();
+  startClock();
+  initParticles();
+  initCursorAndParallax();
+
+  initEnterGate();
+
+  // Loading screen, rồi hiện trang
+  await runLoader();
+});
+  </script>
+</body>
+</html>
