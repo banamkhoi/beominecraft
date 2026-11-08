@@ -113,6 +113,20 @@ body.dim-end .bg-layer       { background-image: radial-gradient(circle at 50% 3
 }
 .bg-video[hidden] { display: none; }
 
+/* ---------- Shader nền (WebGL) – blend lên trên video ---------- */
+#shaderBg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -3;
+  pointer-events: none;
+  mix-blend-mode: screen;   /* giữ video phía sau, shader chỉ cộng thêm ánh sáng */
+  opacity: 0.6;             /* chỉnh 0.3–0.8 tùy độ đậm */
+  image-rendering: pixelated;
+  transition: opacity .6s ease;
+}
+
 .bg-overlay {
   position: fixed;
   inset: 0;
@@ -695,9 +709,10 @@ body.flash::before {
     </div>
   </div>
 
-  <!-- Nền: ảnh + overlay + parallax -->
+  <!-- Nền: ảnh + video + shader + overlay + parallax -->
   <div class="bg-layer" id="bgLayer" aria-hidden="true"></div>
   <video id="bgVideo" class="bg-video" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+  <canvas id="shaderBg" aria-hidden="true"></canvas>
   <div class="bg-overlay" aria-hidden="true"></div>
   <canvas id="particles" aria-hidden="true"></canvas>
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
@@ -876,6 +891,8 @@ function addRipple(el, x, y) {
 }
 
 /* ---------- 3. ÁP DỤNG CẤU HÌNH LÊN GIAO DIỆN ---------- */
+let particleColor = '#7ddc4b';
+
 function applyConfig() {
   $('#displayName').textContent = CONFIG.username;
   $('#handle').textContent = CONFIG.handle;
@@ -883,9 +900,10 @@ function applyConfig() {
   $('#location').textContent = CONFIG.location;
   $('#bio').textContent = CONFIG.bio;
 
-  const avatarSrc = CONFIG.avatar || CONFIG.minecraftSkin;
   const avatarImg = $('#avatarImg');
-  avatarImg.src = avatarSrc;
+  if (CONFIG.avatar) {
+    avatarImg.src = CONFIG.avatar;
+  }
   avatarImg.loading = 'lazy';
   avatarImg.onerror = () => { avatarImg.removeAttribute('src'); };
 
@@ -980,20 +998,12 @@ function startClock() {
   setInterval(update, 1000);
 }
 
-/* ---------- 7. PARTICLE NỀN (canvas, requestAnimationFrame) ---------- */
-let particleColor = '#7ddc4b';
-
+/* ---------- 6. PARTICLE NỀN (canvas, requestAnimationFrame) ---------- */
 function initParticles() {
   if (prefersReducedMotion) return;
   const canvas = $('#particles');
   const ctx = canvas.getContext('2d');
   let w, h, particles = [];
-
-  const resize = () => {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-    particles = Array.from({ length: CONFIG.particles.count }, () => spawn(true));
-  };
 
   const spawn = (randomY = false) => ({
     x: Math.random() * w,
@@ -1003,6 +1013,12 @@ function initParticles() {
     drift: (Math.random() - 0.5) * 0.4,
     alpha: Math.random() * 0.6 + 0.2
   });
+
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    particles = Array.from({ length: CONFIG.particles.count }, () => spawn(true));
+  };
 
   let last = 0;
   const draw = (ts) => {
@@ -1029,7 +1045,7 @@ function initParticles() {
   requestAnimationFrame(draw);
 }
 
-/* ---------- 8. CURSOR GLOW + PARALLAX (1 vòng rAF, mượt) ---------- */
+/* ---------- 7. CURSOR GLOW + PARALLAX (1 vòng rAF, mượt) ---------- */
 function initCursorAndParallax() {
   if (prefersReducedMotion) return;
   const glow = $('#cursorGlow');
@@ -1062,7 +1078,7 @@ function initCursorAndParallax() {
   requestAnimationFrame(loop);
 }
 
-/* ---------- 9. MUSIC PLAYER ---------- */
+/* ---------- 8. MUSIC PLAYER ---------- */
 function initPlayer() {
   const audio = $('#audio');
   const disc = $('#disc');
@@ -1157,7 +1173,7 @@ function initPlayer() {
   audio.addEventListener('ended', () => setPlayingUI(false));
 }
 
-/* ---------- 10. SOCIAL LINKS: ripple + đếm click ---------- */
+/* ---------- 9. SOCIAL LINKS: ripple ---------- */
 function initSocials() {
   $$('.block-btn').forEach(a => {
     a.addEventListener('click', e => {
@@ -1170,13 +1186,13 @@ function initSocials() {
   });
 }
 
-/* ---------- 11. AVATAR: ripple ---------- */
+/* ---------- 10. AVATAR: ripple ---------- */
 function initAvatar() {
   const btn = $('#avatar');
   btn.addEventListener('click', e => addRipple(btn, e.clientX, e.clientY));
 }
 
-/* ---------- 12. DIMENSION (Overworld / Nether / End) ---------- */
+/* ---------- 11. DIMENSION (Overworld / Nether / End) ---------- */
 function setDimension(dim) {
   const body = document.body;
   const bgLayer = $('#bgLayer');
@@ -1198,18 +1214,25 @@ function setDimension(dim) {
     b.setAttribute('aria-pressed', String(active));
   });
 
-  localStorage.setItem('mc-linkbio-dim', dim);
+  try {
+    localStorage.setItem('mc-linkbio-dim', dim);
+  } catch (err) {
+    // Một số trình duyệt chặn localStorage khi mở file trực tiếp: bỏ qua
+  }
 }
 
 function initDimensions() {
   $$('.dim-btn').forEach(btn => {
     btn.addEventListener('click', () => setDimension(btn.dataset.dim));
   });
-  const saved = localStorage.getItem('mc-linkbio-dim') || CONFIG.defaultDimension;
+  let saved = CONFIG.defaultDimension;
+  try {
+    saved = localStorage.getItem('mc-linkbio-dim') || CONFIG.defaultDimension;
+  } catch (err) { /* bỏ qua */ }
   setDimension(saved);
 }
 
-/* ---------- 12b. CLICK TO ENTER: click để bật nhạc + video nền ---------- */
+/* ---------- 12. CLICK TO ENTER: click để bật nhạc + video nền ---------- */
 // Trình duyệt chỉ cho phát tiếng sau một thao tác của người dùng (click/chạm/phím).
 // Nên nhạc chỉ bắt đầu khi khách bấm vào màn hình này.
 function initEnterGate() {
@@ -1249,21 +1272,203 @@ function initEnterGate() {
   });
 }
 
-/* ---------- 13. KHỞI ĐỘNG ---------- */
-document.addEventListener('DOMContentLoaded', async () => {
-  applyConfig();
-  initAvatar();
-  initSocials();
-  initPlayer();
-  initDimensions();
-  startClock();
-  initParticles();
-  initCursorAndParallax();
+/* ---------- 13. SHADER NỀN (WebGL) – blend lên trên video ---------- */
+const SHADER_FRAG = `
+precision highp float;
+uniform vec2  uRes;
+uniform float uTime;
+uniform float uDim;   // 0 = overworld, 1 = nether, 2 = end
 
-  initEnterGate();
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 5; i++) {
+    v += a * noise(p);
+    p = p * 2.03 + vec2(1.7, 9.2);
+    a *= 0.5;
+  }
+  return v;
+}
 
-  // Loading screen, rồi hiện trang
-  await runLoader();
+// Sao lấp lánh (The End)
+float stars(vec2 uv, float t) {
+  vec2 g = floor(uv * 90.0);
+  vec2 f = fract(uv * 90.0) - 0.5;
+  float h = hash(g);
+  float tw = 0.6 + 0.4 * sin(t * 2.0 + h * 40.0);
+  vec2 off = (vec2(hash(g + 3.1), hash(g + 7.7)) - 0.5) * 0.6;
+  float d = length(f - off);
+  return step(0.93, h) * smoothstep(0.12, 0.0, d) * tw;
+}
+
+// Tàn lửa bay lên (Nether)
+float embers(vec2 uv, float t) {
+  float e = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float s = float(i) + 1.0;
+    vec2 p = vec2(uv.x * 12.0 * s, uv.y * 8.0 * s + t * 0.6 * s);
+    vec2 g = floor(p);
+    vec2 f = fract(p) - 0.5;
+    float h = hash(g + s);
+    vec2 off = (vec2(hash(g + s * 2.3), hash(g + s * 5.1)) - 0.5) * 0.5;
+    float d = length(f - off);
+    e += smoothstep(0.08, 0.0, d) * step(0.7, h) * (0.5 + 0.5 * sin(t * 3.0 + h * 20.0));
+  }
+  return e;
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 p  = (uv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
+  float t = uTime * 0.05;
+  vec3 col;
+
+  if (uDim < 0.5) {
+    // OVERWORLD: bầu trời gradient + mây trôi
+    float n = fbm(p * 2.0 + vec2(t * 2.0, 0.0));
+    float q = fbm(p * 3.0 - vec2(t, 0.0) + n * 1.5);
+    vec3 sky = mix(vec3(0.05, 0.12, 0.30), vec3(0.45, 0.70, 1.00), uv.y);
+    col = mix(sky, vec3(1.0), smoothstep(0.45, 0.85, q) * 0.8);
+    // Dải đất xanh ở đáy
+    col = mix(col, vec3(0.25, 0.55, 0.20), smoothstep(0.30, 0.22, uv.y));
+  } else if (uDim < 1.5) {
+    // NETHER: nền đỏ cam cuộn + tàn lửa
+    float n = fbm(p * 3.0 + vec2(0.0, t * 3.0));
+    vec3 c = mix(vec3(0.15, 0.02, 0.00), vec3(0.90, 0.30, 0.05), n);
+    c += vec3(1.0, 0.6, 0.2) * embers(uv, uTime * 0.3);
+    col = c;
+  } else {
+    // THE END: nền tím + cực quang + sao
+    float n = fbm(p * 2.0 + vec2(t, -t));
+    float band = sin(p.x * 3.0 + uTime * 0.2 + n * 4.0) * 0.5 + 0.5;
+    col = mix(vec3(0.02, 0.00, 0.06), vec3(0.30, 0.10, 0.50), n);
+    col += vec3(0.2, 0.9, 0.8) * smoothstep(0.25, 0.0, abs(uv.y - 0.6 - band * 0.2)) * 0.25;
+    col += vec3(stars(uv, uTime));
+  }
+
+  // Vignette
+  float vig = smoothstep(1.3, 0.4, length(uv - 0.5));
+  col *= mix(0.4, 1.0, vig);
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+function initShaderBg() {
+  const canvas = $('#shaderBg');
+  const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
+  if (!gl) {
+    canvas.remove();   // trình duyệt không hỗ trợ WebGL: dùng nền CSS cũ
+    return;
+  }
+
+  const compile = (type, src) => {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(s));
+    }
+    return s;
+  };
+
+  const vsSrc = `
+    attribute vec2 aPos;
+    void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+  `;
+
+  let prog;
+  try {
+    prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, SHADER_FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(prog));
+    }
+  } catch (err) {
+    console.warn('Shader lỗi:', err);
+    canvas.remove();
+    return;
+  }
+  gl.useProgram(prog);
+
+  // Một tam giác phủ kín màn hình
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, 'aPos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, 'uRes');
+  const uTime = gl.getUniformLocation(prog, 'uTime');
+  const uDim = gl.getUniformLocation(prog, 'uDim');
+  const dimIndex = { overworld: 0, nether: 1, end: 2 };
+
+  // Render ở 50% độ phân giải để nhẹ máy
+  const SCALE = 0.5;
+  const resize = () => {
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * SCALE));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * SCALE));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  const start = performance.now();
+  const draw = () => {
+    const dimName = (document.body.className.match(/dim-(\w+)/) || [])[1];
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, prefersReducedMotion ? 0 : (performance.now() - start) / 1000);
+    gl.uniform1f(uDim, dimIndex[dimName] ?? 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (!prefersReducedMotion) requestAnimationFrame(draw);
+  };
+  draw();
+}
+
+/* ---------- 14. KHỞI ĐỘNG ----------
+   Loading screen chạy NGAY, không phụ thuộc vào các bước khác.
+   Mỗi bước khởi tạo được bọc riêng: nếu một bước lỗi, các bước còn lại vẫn chạy.
+   Có thêm bộ hẹn giờ dự phòng để loading không bao giờ bị treo. */
+document.addEventListener('DOMContentLoaded', () => {
+  // Bộ hẹn giờ dự phòng: sau 6 giây luôn ẩn loading
+  const failsafe = setTimeout(() => {
+    $('#loader').classList.add('hide');
+  }, 6000);
+
+  // Chạy loading screen trước
+  runLoader().then(() => clearTimeout(failsafe));
+
+  const safe = (name, fn) => {
+    try {
+      fn();
+    } catch (err) {
+      console.error(`[${name}] lỗi:`, err);
+    }
+  };
+
+  safe('applyConfig', applyConfig);
+  safe('initAvatar', initAvatar);
+  safe('initSocials', initSocials);
+  safe('initPlayer', initPlayer);
+  safe('initDimensions', initDimensions);
+  safe('startClock', startClock);
+  safe('initParticles', initParticles);
+  safe('initCursorAndParallax', initCursorAndParallax);
+  safe('initShaderBg', initShaderBg);
+  safe('initEnterGate', initEnterGate);
 });
   </script>
 </body>
